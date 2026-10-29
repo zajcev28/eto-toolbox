@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insulation Resistance Test Evaluator for Ships (Megger) | Earth Fault Club</title>
+<meta name="description" content="Check a megger reading on board: recommended test voltage, minimum insulation resistance for cables and motors, temperature correction to 40 °C, polarization index (PI) and DAR, and trend against your last reading.">
+<link rel="canonical" href="https://earthfaultclub.com/insulation-resistance/">
+<link rel="stylesheet" href="/assets/style.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Insulation Resistance Test Evaluator","applicationCategory":"EngineeringApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Evaluates insulation resistance (megger) readings for marine cables, motors and generators: test voltage, minimum values, temperature correction, PI and DAR."}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <nav class="top"><a class="brand" href="/">Earth Fault Club</a><span class="links"><a href="/voltage-drop/">Voltage drop</a><a href="/insulation-resistance/" aria-current="page">Insulation resistance</a></span></nav>
+  <h1>Insulation Resistance Test Evaluator</h1>
+  <p class="lead">Got a megger reading and not sure if it's good enough? Enter it here: you get the right test voltage, the minimum acceptable value, the reading corrected to 40 °C, PI and DAR, and a comparison with your last test.</p>
+</header>
+
+<div class="grid">
+<form class="panel" id="f" autocomplete="off" onsubmit="return false">
+  <fieldset>
+    <legend>Equipment</legend>
+    <div class="seg">
+      <label><input type="radio" name="eq" value="cable"><span>Cable / circuit</span></label>
+      <label><input type="radio" name="eq" value="lv" checked><span>LV motor / gen.</span></label>
+      <label><input type="radio" name="eq" value="hv"><span>Form-wound</span></label>
+    </div>
+    <div class="hint" id="eqHint"></div>
+  </fieldset>
+
+  <div class="row">
+    <label><span class="t">Rated voltage (V)</span>
+      <input type="number" name="un" value="440" min="1" step="any" list="volts"></label>
+    <label><span class="t">Test voltage used (V DC)</span>
+      <select name="ut"><option>50</option><option>100</option><option>250</option><option selected>500</option><option>1000</option><option>2500</option><option>5000</option><option>10000</option></select></label>
+  </div>
+  <datalist id="volts"><option value="6600"><option value="3300"><option value="690"><option value="440"><option value="400"><option value="230"><option value="115"><option value="24"></datalist>
+
+  <div class="row">
+    <label><span class="t">IR at 1 min (MΩ)</span>
+      <input type="number" name="r1" value="25" min="0" step="any"></label>
+    <label><span class="t" id="tLbl">Winding temp. (°C)</span>
+      <input type="number" name="temp" value="25" min="-20" max="150" step="1"></label>
+  </div>
+
+  <div class="row">
+    <label><span class="t">IR at 30 s (MΩ)</span>
+      <input type="number" name="r30" min="0" step="any" placeholder="optional"></label>
+    <label><span class="t">IR at 10 min (MΩ)</span>
+      <input type="number" name="r10" value="60" min="0" step="any" placeholder="optional"></label>
+  </div>
+
+  <div class="row">
+    <label><span class="t">Previous IR (MΩ)</span>
+      <input type="number" name="prev" min="0" step="any" placeholder="optional"></label>
+    <label><span class="t">Previous temp. (°C)</span>
+      <input type="number" name="ptemp" min="-20" max="150" step="1" placeholder="optional"></label>
+  </div>
+  <div class="hint">Previous reading from your megger log, taken the same way (same test voltage, 1 min).</div>
+
+  <div class="actions">
+    <button type="button" id="copy">Copy link to this result</button>
+    <button type="button" class="ghost" id="reset">Reset</button>
+  </div>
+</form>
+
+<section aria-live="polite">
+  <div class="verdict" id="vd"><div class="k">Assessment</div><div class="v" id="vdV">–</div></div>
+  <div class="summary">
+    <div class="stat main"><div class="k" id="sCorrK">IR at 40 °C</div><div class="v" id="sCorr">–</div><div class="s" id="sCorr2"></div></div>
+    <div class="stat"><div class="k">Minimum</div><div class="v" id="sMin">–</div><div class="s" id="sMin2"></div></div>
+    <div class="stat"><div class="k">Test voltage</div><div class="v" id="sUt">–</div><div class="s" id="sUt2"></div></div>
+  </div>
+  <div class="summary">
+    <div class="stat"><div class="k">PI (10 min / 1 min)</div><div class="v" id="sPi">–</div><div class="s" id="sPi2"></div></div>
+    <div class="stat"><div class="k">DAR (1 min / 30 s)</div><div class="v" id="sDar">–</div><div class="s" id="sDar2"></div></div>
+    <div class="stat"><div class="k">Trend</div><div class="v" id="sTr">–</div><div class="s" id="sTr2"></div></div>
+  </div>
+  <div class="panel"><ul class="notes" id="notes"></ul></div>
+</section>
+</div>
+
+<article>
+  <h2>How the reading is evaluated</h2>
+  <p><strong>Test voltage.</strong> For cables and circuits the usual marine practice (IEC 60092-401 and class rules) is twice the rated voltage for circuits up to 250 V, 500 V DC for 250–1000 V, 1000 V DC up to 7.2 kV and 5000 V DC above that. For rotating machines the calculator follows IEEE 43: 500 V DC for windings below 1 kV, rising to 5–10 kV for high-voltage machines.</p>
+  <p><strong>Minimum value.</strong> Cables and circuits rated up to 1000 V should show at least 1 MΩ; above 1000 V the minimum is (rated kV + 1) MΩ. For motors and generators IEEE 43 recommends at least 5 MΩ at 40 °C for random-wound and LV windings, and 100 MΩ for form-wound windings. These are minimums for putting equipment into service, not targets: a healthy installation normally reads far higher.</p>
+  <p><strong>Temperature correction.</strong> Insulation resistance roughly halves for every 10 °C rise, so readings from a cold machine look better than they are. Machine readings are corrected to 40 °C:</p>
+  <span class="f">R40 = Rt × 0.5^((40 − t) / 10)</span>
+  <p>Cable readings are shown as measured. Correction factors for cables depend on the insulation material, so compare cable readings taken at similar temperatures.</p>
+  <p><strong>PI and DAR.</strong> The polarization index (10 min ÷ 1 min) and dielectric absorption ratio (1 min ÷ 30 s) show whether the insulation is dry and clean. A rising reading during the test is healthy; a flat or falling one points to moisture or contamination. IEEE 43 recommends a PI of at least 2.0 for class B, F and H insulation. When the 1-minute reading is above about 5000 MΩ, PI is not a reliable indicator.</p>
+  <p><strong>Trend.</strong> The most useful check on board is comparison with your own log. A drop of more than half since the last test, at a comparable temperature, is worth investigating even if the value is still above the minimum.</p>
+
+  <h2>Before you megger</h2>
+  <p>Isolate and lock out the circuit, prove it dead, and disconnect anything electronic that the test voltage can damage: drives, AVRs, PLC I/O, sensors, surge suppressors. After the test, discharge the cable or winding to earth; long cables and large machines can hold a dangerous charge for minutes.</p>
+
+  <h2>FAQ</h2>
+  <details><summary>My motor reads 2 MΩ cold. Can I start it?</summary><p>Corrected to 40 °C it will be lower still, below the IEEE 43 recommended minimum. Find the cause first: moisture is the usual suspect after a long standstill, and drying out with anti-condensation heaters or low-voltage heating often brings it back.</p></details>
+  <details><summary>Why is my PI below 1?</summary><p>The reading fell during the test, which usually means moisture, contamination or a leakage path. Treat it as a fault indication and investigate before running the machine.</p></details>
+  <details><summary>Does 1 MΩ mean a cable is fine?</summary><p>It is the acceptance floor, not a healthy value. A sound LV cable usually reads hundreds of MΩ or more. If a circuit sits just above 1 MΩ, it needs attention.</p></details>
+</article>
+
+<footer>
+  Earth Fault Club · Free tools for marine electrical officers. Results are indicative; always follow the manufacturer's instructions, your company's procedures and the rules that apply to your vessel.
+</footer>
+</div>
+
+<script>
+(() => {
+  const RANGES = [50, 100, 250, 500, 1000, 2500, 5000, 10000];
+  const DEFAULTS = {eq:'lv', un:'440', ut:'500', r1:'25', temp:'25', r30:'', r10:'60', prev:'', ptemp:''};
+  const LEVEL = {good: 0, mon: 1, bad: 2};
+  const f = document.getElementById('f');
+  const $ = id => document.getElementById(id);
+  const num = v => (v === null || v === '' ? NaN : +v);
+  const fmt = (n, d = 1) => Number.isFinite(n)
+    ? n.toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d}) : '–';
+  const fmtR = n => !Number.isFinite(n) ? '–' : (n >= 100 ? fmt(n, 0) : n >= 10 ? fmt(n, 1) : fmt(n, 2));
+
+  function read() {
+    const fd = new FormData(f);
+    return {
+      eq: fd.get('eq'), un: num(fd.get('un')), ut: num(fd.get('ut')), r1: num(fd.get('r1')),
+      temp: num(fd.get('temp')), r30: num(fd.get('r30')), r10: num(fd.get('r10')),
+      prev: num(fd.get('prev')), ptemp: num(fd.get('ptemp'))
+    };
+  }
+
+  // Recommended DC test voltage (range)
+  function testVoltage(eq, un) {
+    if (eq === 'cable') {
+      if (un <= 250) { const v = RANGES.find(r => r >= 2 * un) || 500; return {lo: v, hi: v}; }
+      if (un <= 1000) return {lo: 500, hi: 500};
+      if (un <= 7200) return {lo: 1000, hi: 1000};
+      return {lo: 5000, hi: 5000};
+    }
+    if (un < 1000) return {lo: 500, hi: 500};
+    if (un <= 2500) return {lo: 500, hi: 1000};
+    if (un <= 5000) return {lo: 1000, hi: 2500};
+    if (un <= 12000) return {lo: 2500, hi: 5000};
+    return {lo: 5000, hi: 10000};
+  }
+
+  function minimum(eq, un) {
+    if (eq === 'cable') return {v: un <= 1000 ? 1 : un / 1000 + 1, src: un <= 1000 ? 'IEC 60092-401 / class' : '(kV + 1) MΩ'};
+    if (eq === 'lv') return {v: 5, src: 'IEEE 43, at 40 °C'};
+    return {v: 100, src: 'IEEE 43, at 40 °C'};
+  }
+
+  const corr = (r, t) => r * Math.pow(0.5, (40 - t) / 10);
+
+  function evaluate(p) {
+    const machine = p.eq !== 'cable';
+    const tv = testVoltage(p.eq, p.un);
+    const min = minimum(p.eq, p.un);
+    const tOk = Number.isFinite(p.temp);
+    const r = machine ? (tOk ? corr(p.r1, p.temp) : NaN) : p.r1;
+    const notes = [];
+    const lv = [];
+
+    // Level vs minimum
+    let irLevel = 'good';
+    if (!Number.isFinite(r)) irLevel = null;
+    else if (r < min.v) irLevel = 'bad';
+    else if (!machine && r < 10 * min.v) irLevel = 'mon';
+    if (irLevel) lv.push(irLevel);
+    if (machine) {
+      const legacy = p.un / 1000 + 1;
+      if (Number.isFinite(r) && r < legacy) notes.push('Below even the old (kV + 1) MΩ rule. Do not energise until the cause is found.');
+      else if (irLevel === 'bad') notes.push('Below the IEEE 43 recommended minimum. Check for moisture: run the anti-condensation heater or dry the winding, then retest.');
+      if (tOk && p.temp < 40) notes.push('Measured below 40 °C, so the corrected value is lower than the meter reading.');
+    } else if (irLevel === 'bad') {
+      notes.push('Below the acceptance minimum. Split the circuit (disconnect consumers, test sections) to locate the low-insulation part.');
+    } else if (irLevel === 'mon') {
+      notes.push('Above the minimum but low for a cable. A healthy LV cable usually reads hundreds of MΩ; log it and retest.');
+    }
+
+    // Test voltage check
+    let tvNote = '';
+    if (Number.isFinite(p.ut)) {
+      if (p.ut > tv.hi) { tvNote = 'Higher than recommended'; notes.push('Test voltage is above the recommended value: risk of stressing the insulation or damaging connected electronics.'); lv.push('mon'); }
+      else if (p.ut < tv.lo) { tvNote = 'Lower than recommended'; notes.push('Test voltage is below the recommended value, so the reading may look better than the insulation really is.'); lv.push('mon'); }
+      else tvNote = 'Matches the recommendation';
+    }
+
+    // PI
+    let pi = NaN, piTxt = 'Enter the 10-min reading';
+    if (Number.isFinite(p.r10) && p.r1 > 0) {
+      pi = p.r10 / p.r1;
+      if (p.r1 > 5000) piTxt = 'Not meaningful above 5000 MΩ';
+      else if (pi < 1) { piTxt = 'Falling: moisture/contamination'; lv.push('bad'); }
+      else if (pi < 2) { piTxt = machine ? 'Below 2.0, questionable' : 'Questionable'; lv.push('mon'); }
+      else if (pi <= 4) piTxt = 'Good';
+      else piTxt = 'Very good';
+      if (machine && p.r1 <= 5000 && pi < 2) notes.push('PI below 2.0 (IEEE 43 minimum for class B/F/H insulation). Clean and dry the winding before running.');
+    }
+
+    // DAR
+    let dar = NaN, darTxt = 'Enter the 30-s reading';
+    if (Number.isFinite(p.r30) && p.r30 > 0) {
+      dar = p.r1 / p.r30;
+      if (dar < 1) { darTxt = 'Poor'; lv.push('bad'); }
+      else if (dar < 1.25) { darTxt = 'Questionable'; lv.push('mon'); }
+      else if (dar <= 1.6) darTxt = 'Good';
+      else darTxt = 'Excellent';
+    }
+
+    // Trend
+    let tr = NaN, trTxt = 'Enter a previous reading';
+    if (Number.isFinite(p.prev) && p.prev > 0) {
+      const prevC = machine && Number.isFinite(p.ptemp) ? corr(p.prev, p.ptemp) : p.prev;
+      const nowC = machine ? r : p.r1;
+      if (Number.isFinite(nowC)) {
+        tr = (nowC - prevC) / prevC * 100;
+        trTxt = machine ? (Number.isFinite(p.ptemp) ? 'Both corrected to 40 °C' : 'Previous temp. unknown, not corrected') : 'As measured';
+        if (!machine && Number.isFinite(p.ptemp) && tOk && Math.abs(p.temp - p.ptemp) > 10) trTxt = 'Temperatures differ by over 10 °C';
+        if (tr <= -50) { lv.push('mon'); notes.push('More than half the insulation resistance lost since the last test. Investigate even though the value may still pass.'); }
+      }
+    }
+
+    const worst = lv.length ? lv.reduce((a, b) => LEVEL[b] > LEVEL[a] ? b : a, 'good') : null;
+    return {machine, tv, min, r, tvNote, pi, piTxt, dar, darTxt, tr, trTxt, notes, worst};
+  }
+
+  const VERDICT = {
+    good: 'Acceptable. Log the reading and keep trending.',
+    mon: 'Acceptable with reservations. Retest and watch the trend.',
+    bad: 'Not acceptable. Find the cause before energising.'
+  };
+
+  function render() {
+    const p = read();
+    const machine = p.eq !== 'cable';
+    $('tLbl').textContent = machine ? 'Winding temp. (°C)' : 'Cable temp. (°C)';
+    $('sCorrK').textContent = machine ? 'IR at 40 °C' : 'IR (as measured)';
+    $('eqHint').textContent = p.eq === 'cable' ? 'Cables, distribution circuits, switchboard sections.'
+      : p.eq === 'lv' ? 'Random-wound and LV machines below 1 kV (most motors on board).'
+      : 'Form-wound windings, typically HV motors and generators.';
+
+    const vd = $('vd');
+    if (!(p.un > 0) || !(p.r1 >= 0) || !Number.isFinite(p.r1)) {
+      vd.className = 'verdict'; $('vdV').textContent = 'Enter the rated voltage and the 1-minute reading.';
+      return;
+    }
+    const e = evaluate(p);
+    vd.className = 'verdict ' + (e.worst || '');
+    $('vdV').textContent = e.worst ? VERDICT[e.worst] : 'Enter the temperature to evaluate a machine reading.';
+    $('sCorr').textContent = fmtR(e.r) + ' MΩ';
+    $('sCorr2').textContent = machine ? 'Meter: ' + fmtR(p.r1) + ' MΩ at ' + (Number.isFinite(p.temp) ? p.temp + ' °C' : '?') : '';
+    $('sMin').textContent = fmtR(e.min.v) + ' MΩ';
+    $('sMin2').textContent = e.min.src;
+    $('sUt').textContent = (e.tv.lo === e.tv.hi ? e.tv.lo : e.tv.lo + '–' + e.tv.hi) + ' V';
+    $('sUt2').textContent = e.tvNote;
+    $('sPi').textContent = fmt(e.pi, 2);
+    $('sPi2').textContent = e.piTxt;
+    $('sDar').textContent = fmt(e.dar, 2);
+    $('sDar2').textContent = e.darTxt;
+    $('sTr').textContent = Number.isFinite(e.tr) ? (e.tr > 0 ? '+' : '') + fmt(e.tr, 0) + ' %' : '–';
+    $('sTr2').textContent = e.trTxt;
+    const notes = e.notes.length ? e.notes : ['No issues found in the figures entered.'];
+    notes.push('Discharge the cable or winding to earth after testing.');
+    $('notes').innerHTML = notes.map(n => '<li>' + n + '</li>').join('');
+    writeHash();
+  }
+
+  function writeHash() {
+    const fd = new FormData(f), q = new URLSearchParams();
+    for (const [k, v] of fd) if (v !== '') q.set(k, v);
+    try { history.replaceState(null, '', '#' + q.toString()); } catch (e) {}
+  }
+
+  function apply(vals) {
+    for (const [k, v] of Object.entries(vals)) {
+      const els = f.elements[k];
+      if (!els) continue;
+      if (els instanceof RadioNodeList) { for (const el of els) el.checked = el.value === v; }
+      else els.value = v;
+    }
+  }
+
+  function readHash() {
+    if (location.hash.length < 2) return;
+    const q = new URLSearchParams(location.hash.slice(1));
+    const vals = {};
+    for (const k of Object.keys(DEFAULTS)) vals[k] = q.has(k) ? q.get(k) : '';
+    if (!vals.eq) vals.eq = DEFAULTS.eq;
+    if (!vals.ut) vals.ut = DEFAULTS.ut;
+    apply(vals);
+  }
+
+  f.addEventListener('input', render);
+  f.addEventListener('change', render);
+  f.elements.eq.forEach(el => el.addEventListener('change', () => {
+    if (!el.checked) return;
+    const un = +f.elements.un.value;
+    const tv = testVoltage(el.value, un);
+    const sel = f.elements.ut;
+    if ([...sel.options].some(o => +o.value === tv.lo)) sel.value = String(tv.lo);
+    render();
+  }));
+  f.elements.un.addEventListener('change', () => {
+    const tv = testVoltage(new FormData(f).get('eq'), +f.elements.un.value);
+    if ([...f.elements.ut.options].some(o => +o.value === tv.lo)) f.elements.ut.value = String(tv.lo);
+    render();
+  });
+  $('reset').addEventListener('click', () => { apply(DEFAULTS); render(); });
+  $('copy').addEventListener('click', async e => {
+    writeHash();
+    try { await navigator.clipboard.writeText(location.href); e.target.textContent = 'Link copied'; }
+    catch (err) { e.target.textContent = 'Copy failed'; }
+    setTimeout(() => e.target.textContent = 'Copy link to this result', 1600);
+  });
+
+  readHash();
+  render();
+})();
+</script>
+</body>
+</html>
