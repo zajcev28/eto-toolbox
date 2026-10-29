@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marine Cable Voltage Drop &amp; Cable Size Calculator | ETO Toolbox</title>
+<meta name="description" content="Free voltage drop and cable size calculator for ships: 440 V / 230 V three-phase, single-phase and 24 V DC. Ampacity derating, parallel runs and the 6% voltage drop limit used in marine installations.">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Marine Cable Voltage Drop & Cable Size Calculator","applicationCategory":"EngineeringApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Voltage drop and cable cross-section calculator for marine electrical installations (AC three-phase, single-phase and DC)."}
+</script>
+<style>
+:root{
+  --bg:#f4f2ed; --panel:#ffffff; --ink:#14202b; --muted:#5b6670; --line:#d9d5cc;
+  --accent:#0b5e7e; --accent-ink:#ffffff; --ok:#1d7a46; --warn:#a86400; --bad:#b3261e;
+  --hl:#e3f0f5; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e151b; --panel:#16212a; --ink:#e6ebef; --muted:#93a0aa; --line:#27353f;
+    --accent:#4fb3d9; --accent-ink:#06141b; --ok:#5cc489; --warn:#e3a646; --bad:#ef7a72; --hl:#173341;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 48px}
+header .brand{font:600 13px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(24px,4vw,34px);line-height:1.15;margin:10px 0 6px}
+.lead{color:var(--muted);margin:0 0 24px;max-width:680px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+fieldset{border:0;margin:0 0 14px;padding:0}
+legend,label .t{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{flex:1;text-align:center;padding:8px 4px;font-size:14px;cursor:pointer;border-right:1px solid var(--line)}
+.seg label:last-child{border-right:0}
+.seg input:checked+span{color:var(--accent-ink)}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;margin-bottom:12px}
+input[type=number],select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font:15px var(--mono)}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:12px}
+.hint{font-size:12px;color:var(--muted);margin-top:3px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media (max-width:560px){.summary{grid-template-columns:1fr}}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stat .k{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.stat .v{font:600 26px/1.2 var(--mono);margin-top:4px}
+.stat .s{font-size:13px;color:var(--muted)}
+.stat.main{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono)}
+tr.rec td{background:var(--hl);font-weight:700}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.tag{font:600 11px system-ui;padding:2px 6px;border-radius:4px;border:1px solid currentColor}
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+button{font:600 14px system-ui;padding:9px 14px;border-radius:7px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+.msg{margin:0 0 14px;padding:10px 12px;border-radius:8px;font-size:14px;border:1px solid var(--line)}
+article{margin-top:36px;max-width:760px}
+article h2{font-size:21px;margin:28px 0 8px}
+article code,article .f{font-family:var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:14px}
+article .f{display:block;padding:10px 12px;margin:8px 0;overflow-x:auto}
+details{border-top:1px solid var(--line);padding:10px 0}
+summary{cursor:pointer;font-weight:600}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand">ETO Toolbox</div>
+  <h1>Marine Cable Voltage Drop &amp; Cable Size Calculator</h1>
+  <p class="lead">Size a cable for a ship's 440 V / 230 V AC or 24 V DC circuit in seconds. Checks both current-carrying capacity (with derating) and voltage drop, and picks the smallest cross-section that passes.</p>
+</header>
+
+<div class="grid">
+<form class="panel" id="f" autocomplete="off" onsubmit="return false">
+  <fieldset>
+    <legend>System</legend>
+    <div class="seg">
+      <label><input type="radio" name="sys" value="3ph" checked><span>3-phase AC</span></label>
+      <label><input type="radio" name="sys" value="1ph"><span>1-phase AC</span></label>
+      <label><input type="radio" name="sys" value="dc"><span>DC</span></label>
+    </div>
+  </fieldset>
+
+  <div class="row">
+    <label><span class="t">Nominal voltage (V)</span>
+      <input type="number" name="u" value="440" min="1" step="any" list="volts"></label>
+    <label><span class="t">Load given as</span>
+      <select name="mode"><option value="kw">Power (kW)</option><option value="a">Current (A)</option></select></label>
+  </div>
+  <datalist id="volts"><option value="690"><option value="440"><option value="400"><option value="230"><option value="115"><option value="24"></datalist>
+
+  <div class="row">
+    <label><span class="t" id="loadLbl">Power (kW)</span>
+      <input type="number" name="load" value="30" min="0" step="any"></label>
+    <label id="pfWrap"><span class="t">Power factor cos φ</span>
+      <input type="number" name="pf" value="0.85" min="0.1" max="1" step="0.01"></label>
+  </div>
+
+  <div class="row">
+    <label><span class="t">Cable length, one way (m)</span>
+      <input type="number" name="len" value="60" min="0" step="any"></label>
+    <label><span class="t">Max voltage drop (%)</span>
+      <input type="number" name="lim" value="6" min="0.1" step="0.1"></label>
+  </div>
+
+  <div class="row">
+    <label><span class="t">Cable cores</span>
+      <select name="cores"><option value="1">Single-core</option><option value="2">2-core</option><option value="3" selected>3- or 4-core</option></select></label>
+    <label><span class="t">Ambient temp. (°C)</span>
+      <input type="number" name="amb" value="45" min="0" max="85" step="1"></label>
+  </div>
+
+  <div class="row">
+    <label><span class="t">Parallel cables</span>
+      <select name="par"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+    <label><span class="t">Reactance (Ω/km)</span>
+      <input type="number" name="x" value="0.08" min="0" step="0.01"></label>
+  </div>
+
+  <label class="check"><input type="checkbox" name="bunch"> Bunched with more than 6 cables (×0.85)</label>
+  <div class="hint">Copper conductors, 90 °C insulation (EPR / XLPE / HF types common on ships).</div>
+
+  <div class="actions">
+    <button type="button" id="copy">Copy link to this result</button>
+    <button type="button" class="ghost" id="reset">Reset</button>
+  </div>
+</form>
+
+<section aria-live="polite">
+  <div class="summary">
+    <div class="stat"><div class="k">Load current</div><div class="v" id="sI">–</div><div class="s" id="sI2"></div></div>
+    <div class="stat main"><div class="k">Recommended size</div><div class="v" id="sRec">–</div><div class="s" id="sRec2"></div></div>
+    <div class="stat"><div class="k">Voltage drop</div><div class="v" id="sDu">–</div><div class="s" id="sDu2"></div></div>
+  </div>
+  <p class="msg" id="msg" hidden></p>
+  <div class="panel tablewrap">
+    <table>
+      <thead><tr><th>Size (mm²)</th><th>Ampacity (A)</th><th>Load %</th><th>ΔU (V)</th><th>ΔU (%)</th><th>Result</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+</section>
+</div>
+
+<article>
+  <h2>How the calculation works</h2>
+  <p>The calculator first works out the load current, then checks every standard cross-section from 1.5 to 300 mm² against two conditions. The recommended size is the smallest one that meets both.</p>
+  <p><strong>1. Current-carrying capacity.</strong> Base ampacities are for copper cables with 90 °C insulation at 45 °C ambient, the reference ambient for engine rooms. They are corrected for the number of cores (2-core ×0.85, 3/4-core ×0.70), for ambient temperature, and for bunching where selected.</p>
+  <p><strong>2. Voltage drop.</strong></p>
+  <span class="f">3-phase: ΔU = √3 · I · L · (R·cos φ + X·sin φ)</span>
+  <span class="f">1-phase: ΔU = 2 · I · L · (R·cos φ + X·sin φ)</span>
+  <span class="f">DC: ΔU = 2 · I · L · R</span>
+  <p>L is the one-way length. R is the conductor resistance corrected to its estimated operating temperature, which depends on how heavily the cable is loaded. With parallel cables the current is shared equally between them.</p>
+
+  <h2>What voltage drop is allowed on a ship?</h2>
+  <p>IEC 60092-352 is the usual reference: under normal conditions the drop from the main or emergency switchboard to any point of the installation should not exceed 6% of nominal voltage, and up to 10% is commonly allowed for battery supplies of 50 V or less. Motor starting, navigation lights and some essential consumers can have their own limits, and classification societies may be stricter, so check the rules that apply to your vessel.</p>
+
+  <h2>FAQ</h2>
+  <details><summary>Why does a bigger cable sometimes still fail?</summary><p>Long runs on low voltages are limited by voltage drop rather than heating. Try parallel cables or check whether the consumer can be supplied from a closer distribution board.</p></details>
+  <details><summary>Should I enter the one-way or the total length?</summary><p>One-way: the distance from the switchboard to the consumer. The formulas already account for the return path.</p></details>
+  <details><summary>Can I use this for final design?</summary><p>Use it for quick checks and comparisons. For new installations, confirm against the cable manufacturer's data, the applicable standard and your class society's rules.</p></details>
+</article>
+
+<footer>
+  ETO Toolbox · Free tools for marine electrical officers. Results are indicative; always verify against manufacturer data and the rules that apply to your vessel.
+</footer>
+</div>
+
+<script>
+(() => {
+  const SIZES = [1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300];
+  // Conductor DC resistance at 20 °C, Ω/km (IEC 60228, class 2 copper)
+  const R20 = [12.1,7.41,4.61,3.08,1.83,1.15,0.727,0.524,0.387,0.268,0.193,0.153,0.124,0.0991,0.0754,0.0601];
+  // Base ampacity, single-core copper, 90 °C insulation, 45 °C ambient, continuous service (A)
+  const AMP = [23,30,41,52,72,96,127,157,190,242,293,339,389,444,522,601];
+  const CORE_K = {1:1, 2:0.85, 3:0.70};
+  const T_MAX = 90, T_REF = 45, ALPHA = 0.00393;
+  const DEFAULTS = {sys:'3ph',u:'440',mode:'kw',load:'30',pf:'0.85',len:'60',lim:'6',cores:'3',amb:'45',par:'1',x:'0.08',bunch:''};
+
+  const f = document.getElementById('f');
+  const $ = id => document.getElementById(id);
+  const fmt = (n, d=1) => Number.isFinite(n) ? n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}) : '–';
+
+  function read(){
+    const fd = new FormData(f);
+    return {
+      sys: fd.get('sys'), u: +fd.get('u'), mode: fd.get('mode'), load: +fd.get('load'),
+      pf: Math.min(1, Math.max(0.1, +fd.get('pf') || 1)), len: +fd.get('len'), lim: +fd.get('lim'),
+      cores: +fd.get('cores'), amb: +fd.get('amb'), par: +fd.get('par') || 1, x: +fd.get('x') || 0,
+      bunch: fd.get('bunch') === 'on'
+    };
+  }
+
+  function loadCurrent(p){
+    if (p.mode === 'a') return p.load;
+    const w = p.load * 1000;
+    if (p.sys === '3ph') return w / (Math.sqrt(3) * p.u * p.pf);
+    if (p.sys === '1ph') return w / (p.u * p.pf);
+    return w / p.u;
+  }
+
+  function compute(p){
+    const I = loadCurrent(p);
+    const Ic = I / p.par;
+    const ambK = p.amb >= T_MAX ? 0 : Math.sqrt((T_MAX - p.amb) / (T_MAX - T_REF));
+    const k = CORE_K[p.cores] * ambK * (p.bunch ? 0.85 : 1);
+    const dc = p.sys === 'dc';
+    const cos = dc ? 1 : p.pf, sin = dc ? 0 : Math.sqrt(1 - cos*cos);
+    const kv = p.sys === '3ph' ? Math.sqrt(3) : 2;
+    const rows = SIZES.map((s, i) => {
+      const iz = AMP[i] * k;
+      const ratio = iz > 0 ? Ic / iz : Infinity;
+      const tc = p.amb + (T_MAX - p.amb) * Math.min(1, ratio * ratio);
+      const r = R20[i] * (1 + ALPHA * (tc - 20));
+      const z = r * cos + (dc ? 0 : p.x) * sin;
+      const du = kv * Ic * (p.len / 1000) * z;
+      const pct = du / p.u * 100;
+      const ampOk = Ic <= iz;
+      const duOk = pct <= p.lim;
+      return {s, iz, ratio, du, pct, ampOk, duOk};
+    });
+    const rec = rows.find(r => r.ampOk && r.duOk);
+    return {I, Ic, rows, rec};
+  }
+
+  function render(){
+    const p = read();
+    $('loadLbl').textContent = p.mode === 'kw' ? 'Power (kW)' : 'Current (A)';
+    $('pfWrap').style.visibility = (p.sys === 'dc' || p.mode === 'a' && p.sys === 'dc') ? 'hidden' : 'visible';
+    const msg = $('msg');
+    if (!(p.u > 0) || !(p.load > 0) || !(p.len >= 0) || !(p.lim > 0)) {
+      msg.hidden = false; msg.textContent = 'Enter a voltage, load, length and voltage drop limit greater than zero.';
+      $('tb').innerHTML = ''; ['sI','sRec','sDu'].forEach(id => $(id).textContent = '–');
+      ['sI2','sRec2','sDu2'].forEach(id => $(id).textContent = '');
+      return;
+    }
+    const {I, Ic, rows, rec} = compute(p);
+    $('sI').textContent = fmt(I) + ' A';
+    $('sI2').textContent = p.par > 1 ? fmt(Ic) + ' A per cable × ' + p.par : (p.mode === 'kw' && p.sys !== 'dc' ? 'at cos φ ' + p.pf : '');
+    if (rec) {
+      $('sRec').textContent = (p.par > 1 ? p.par + ' × ' : '') + rec.s + ' mm²';
+      $('sRec2').textContent = 'Ampacity ' + fmt(rec.iz, 0) + ' A after derating';
+      $('sDu').textContent = fmt(rec.pct, 2) + ' %';
+      $('sDu2').textContent = fmt(rec.du, 1) + ' V of ' + p.u + ' V (limit ' + p.lim + ' %)';
+      msg.hidden = true;
+    } else {
+      $('sRec').textContent = 'None';
+      $('sRec2').textContent = 'No size up to 300 mm² passes';
+      $('sDu').textContent = '–'; $('sDu2').textContent = '';
+      msg.hidden = false;
+      msg.textContent = 'No single cross-section meets both conditions. Add parallel cables, shorten the run, or check the load figures.';
+    }
+    $('tb').innerHTML = rows.map(r => {
+      let res;
+      if (r.ampOk && r.duOk) res = '<span class="tag ok">OK</span>';
+      else if (!r.ampOk) res = '<span class="tag bad">Overloaded</span>';
+      else res = '<span class="tag warn">ΔU too high</span>';
+      return '<tr class="' + (rec && r.s === rec.s ? 'rec' : '') + '"><td>' + r.s + '</td><td>' + fmt(r.iz, 0) +
+        '</td><td class="' + (r.ampOk ? '' : 'bad') + '">' + (Number.isFinite(r.ratio) ? fmt(r.ratio * 100, 0) : '–') +
+        '</td><td>' + fmt(r.du, 1) + '</td><td class="' + (r.duOk ? '' : 'warn') + '">' + fmt(r.pct, 2) + '</td><td>' + res + '</td></tr>';
+    }).join('');
+    writeHash();
+  }
+
+  function writeHash(){
+    const fd = new FormData(f), q = new URLSearchParams();
+    for (const [k, v] of fd) q.set(k, v);
+    try { history.replaceState(null, '', '#' + q.toString()); } catch (e) {}
+  }
+
+  function apply(vals){
+    for (const [k, v] of Object.entries(vals)) {
+      const els = f.elements[k];
+      if (!els) continue;
+      if (els instanceof RadioNodeList) { for (const el of els) el.checked = el.value === v; }
+      else if (els.type === 'checkbox') els.checked = v === 'on';
+      else els.value = v;
+    }
+  }
+
+  function readHash(){
+    if (location.hash.length < 2) return;
+    const q = new URLSearchParams(location.hash.slice(1));
+    const vals = {};
+    for (const k of Object.keys(DEFAULTS)) if (q.has(k)) vals[k] = q.get(k);
+    if (!q.has('bunch')) vals.bunch = '';
+    apply(vals);
+  }
+
+  f.addEventListener('input', render);
+  f.addEventListener('change', render);
+  f.elements.sys.forEach(el => el.addEventListener('change', () => {
+    const u = f.elements.u;
+    if (el.checked && el.value === 'dc' && +u.value > 60) u.value = 24;
+    if (el.checked && el.value === '1ph' && +u.value === 440) u.value = 230;
+    if (el.checked && el.value === '3ph' && (+u.value === 230 || +u.value === 24)) u.value = 440;
+    if (el.checked && el.value === 'dc') f.elements.lim.value = 10;
+    else if (el.checked && +f.elements.lim.value === 10) f.elements.lim.value = 6;
+    render();
+  }));
+  $('reset').addEventListener('click', () => { apply(DEFAULTS); render(); });
+  $('copy').addEventListener('click', async e => {
+    writeHash();
+    try { await navigator.clipboard.writeText(location.href); e.target.textContent = 'Link copied'; }
+    catch (err) { e.target.textContent = 'Copy failed'; }
+    setTimeout(() => e.target.textContent = 'Copy link to this result', 1600);
+  });
+
+  readHash();
+  render();
+})();
+</script>
+</body>
+</html>
